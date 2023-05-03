@@ -1,10 +1,11 @@
 #include <vector>
 
 class RAM{
+    public:
     int memorySize; //in bytes
     int blockSize; //4-bytes per block
 
-    std::vector<std::vector<char>> caches; //char is one byte
+    std::vector<std::vector<char>> ram; //char is one byte
 
     //default memorySize is 64 bytes
     //default blockSize if 4-bytes per block

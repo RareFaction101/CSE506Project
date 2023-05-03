@@ -1,6 +1,8 @@
 #include <vector>
 
 class Cache{
+    public:
+    
     int cacheSize; //in bytes
     int blockSize; //4-bytes per block
 

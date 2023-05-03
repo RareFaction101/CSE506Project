@@ -2,8 +2,11 @@
 #include "AtomicBus.h"
 
 class Processor{
+    public:
+
+    static int ID;
     int pid;
-    Cache cache;
+    Cache *cache;
     int totalCacheHitRead = 0;
     int totalCacheMissRead = 0;
     int totalCacheHitWrite = 0;
@@ -11,7 +14,7 @@ class Processor{
 
     // set the processor id
     // as well as initializing the cache block
-    Processor(int pid);
+    Processor();
 
     // the processor will either one of the three things below:
     //  read
@@ -32,6 +35,9 @@ class Processor{
     // address is byte address in the physical memory, see more details in cache class
     // data is just 32 bits data
 
-    void operation(const char &c = 's', const int &address = -1, const int &data = -1, const AtomicBus &atomicBus);
-
+    void operation(const int c = 2, const int &address = -1, const int &data = -1, const AtomicBus &atomicBus = AtomicBus());
+    // read
+    if (c == 1){
+        
+    }
 };

@@ -1,8 +1,14 @@
 #include <vector>
 
 class AtomicBus{
-    std::vector<bool> BusRd;
-    std::vector<bool> BusRdX;
+    public:
+    // the busRd is set to True when the processor issues a read, but the data is not present in the cache, otherwise false;
+  // the size should be the same as the processor
+  std::vector<bool> busRd;
+
+  // the busRdX is set to True when the processor issues a write, telling others that the processor is intent to modify the cache line, otherwise false;
+  // the size should be the same as the processor
+  std::vector<bool> busRdX;
 
     //sets the size of busRd and busRdX
     AtomicBus();
