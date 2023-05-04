@@ -113,6 +113,16 @@ void Simulator::report(){
         }
         std::cout << std::endl;
     }
+
+    for (const auto& processor: Processors){
+        std::cout << "Processor: " << processor->pid << "\n";
+
+        std::cout << "Cache Hit Count (Read): " << processor->totalCacheHitRead << "\n";
+        std::cout << "Cache Hit Miss Count (Read): " << processor->totalCacheMissRead << "\n";
+
+        std::cout << "Cache Hit Count (Write): " << processor->totalCacheHitWrite << "\n";
+        std::cout << "Cache Hit Miss Count (Write): " << processor->totalCacheMissWrite << "\n";
+    }
 }
 
 int main(){
