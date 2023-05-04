@@ -28,7 +28,7 @@ void Simulator::simulationBegin(const std::string& filename){
     if (!file.is_open()){
         std::cerr << "Error opening file: " << filename << std::endl;
     }
-
+    
     std::string line;
     while (std::getline(file,line)){
         //read inputs
@@ -45,16 +45,18 @@ void Simulator::simulationBegin(const std::string& filename){
 
         // loop through processors, place some of the processor on action queue, and some on snooping queue
         for (const auto & processor: this->Processors){
-            if(processor->pid == pid)
-                ActionQ.push(processor);
+            if(processor->pid == pid){
+                RequestQ.push(processor);
+                ResponseQ.push(processor);
+            }
             else
                 SnoopingQ.push(processor);
         }
 
-        // start processing action queue
-        while(!ActionQ.empty()){
-            ActionQ.front()->operation(action,address,data,this->atomicBus,this->ram);
-            ActionQ.pop();
+        // start processing request queue
+        while(!RequestQ.empty()){
+            RequestQ.front()->operation(action,address,data,this->atomicBus,this->ram);
+            RequestQ.pop();
         }
         
         // start processing snooping queue
@@ -63,14 +65,20 @@ void Simulator::simulationBegin(const std::string& filename){
             SnoopingQ.pop();
         }
 
-        //clear atomicBus
-        atomicBus->busRd.clear();
-        atomicBus->busRdAddr.clear();
-        atomicBus->busRdX.clear();
-        atomicBus->busRdXAddr.clear();
+        // start processing response queue
+        while(!ResponseQ.empty()){
+            ResponseQ.front()->busResponse(action,address,data,this->atomicBus,this->ram);
+            ResponseQ.pop();
+        }
 
-        //clear data vector
-        instructions.clear();
+        //initialize atomicBus
+        std::fill(atomicBus->busRd.begin(),atomicBus->busRd.end(),false);
+        std::fill(atomicBus->busRdAddr.begin(),atomicBus->busRdAddr.end(),false);
+        std::fill(atomicBus->busRdX.begin(),atomicBus->busRdX.end(),false);
+        std::fill(atomicBus->busRdXAddr.begin(),atomicBus->busRdXAddr.end(),false);
+
+        //generate report
+        report();
     }
 
     file.close();
@@ -90,16 +98,24 @@ void Simulator::report(){
                     std::cout << "Tag:";
                 else if (i == 2)
                     std::cout << "Data:";
+                
                 std::cout << static_cast<unsigned int>(row[i]) << ' ';
             }
             std::cout << std::endl;
         }
         std::cout << '\n';
     }
+
+    std::cout << "RAM Report: \n";
+    for (const auto& ramLine: this->ram->ram){
+        for (int i = 0; i < ramLine.size(); i++){
+            std::cout << static_cast<unsigned int>(ramLine[i]) << ' ';
+        }
+        std::cout << std::endl;
+    }
 }
 
 int main(){
     Simulator *simulator = new Simulator();
     simulator->simulationBegin("test.txt");
-    simulator->report();
 }

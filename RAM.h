@@ -34,5 +34,5 @@ class RAM{
     std::vector<uint8_t> memRead(const uint8_t &address);
 
     // this function write the data to the particular RAM address
-    void writeToMem(const uint8_t &address, const uint8_t &data);
+    void writeToMem(const uint8_t &address, const std::vector<uint8_t> &data);
 };

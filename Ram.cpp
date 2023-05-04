@@ -14,7 +14,7 @@ RAM::RAM(){
 
     uint8_t k = 0;
     for (size_t i = 0; i < ram.size(); i++){
-        for (size_t j = 0; j < ram[i].size(); i++){
+        for (size_t j = 0; j < ram[j].size(); j++){
             ram[i][j] = k++;
         }
     }
@@ -23,8 +23,6 @@ RAM::RAM(){
 std::vector<uint8_t> RAM::memRead(const uint8_t &address){
 
     int paddress = static_cast<unsigned int>(setFirstTwoBitsToZero(address) >> 2);
-
-    std::cout << paddress << "<-paddress" << std::endl;
     
     std::vector<uint8_t> data(4);
 
@@ -32,6 +30,14 @@ std::vector<uint8_t> RAM::memRead(const uint8_t &address){
         data[i] = ram[paddress][i];
         
     return data;
+}
+
+void RAM::writeToMem(const uint8_t &address, const std::vector<uint8_t> &data){
+    int paddress = static_cast<unsigned int>(setFirstTwoBitsToZero(address) >> 2);
+
+    for (size_t i = 0; i < data.size(); i++){
+        ram[paddress][i] = data[i];
+    }
 }
 
 uint8_t setFirstTwoBitsToZero(uint8_t value) {

@@ -39,4 +39,6 @@ class Processor{
 
     //expecting 6 bits address
     void operation(const int &c = 2, const uint8_t &address = -1, const uint8_t &data = -1, AtomicBus *atomicBus = nullptr, RAM *ram = nullptr);
+
+    void busResponse(const int &c = 2, const uint8_t &address = -1, const uint8_t &data = -1, AtomicBus *atomicBus = nullptr, RAM *ram = nullptr);
 };

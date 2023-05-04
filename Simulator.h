@@ -14,8 +14,10 @@ class Simulator{
   std::vector<Processor*> Processors;
   RAM *ram;
   AtomicBus *atomicBus;
-  std::queue<Processor*> ActionQ;
+
+  std::queue<Processor*> RequestQ;
   std::queue<Processor*> SnoopingQ;
+  std::queue<Processor*> ResponseQ;
 
   // the mode should be either assigned to "MESI" or "MSI"
   std::string mode;
