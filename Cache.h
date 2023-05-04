@@ -2,11 +2,11 @@
 
 class Cache{
     public:
-    
+
     int cacheSize; //in bytes
     int blockSize; //4-bytes per block
 
-    std::vector<std::vector<char>> caches; //char is one byte
+    //char is one byte
 
     //default cacheSize is 16 bytes
     //default blockSize if 4-bytes per block

@@ -18,11 +18,11 @@ Simulator::Simulator(){
     this->ram = new RAM();
 
     // initialize atomicBus
-    this->atomicBus = new atomicBus();
+    this->atomicBus = new AtomicBus();
 }
 
 void Simulator::simulationBegin(const std::string& filename){
-    std::vector<int> data(4);
+    std::vector<int> instructions(4);
     std::ifstream file(filename);
 
     if (!file.is_open()){
@@ -35,16 +35,16 @@ void Simulator::simulationBegin(const std::string& filename){
         std::istringstream iss(line);
 
         for (size_t i = 0; i < 4; ++i){
-            iss >> data.at(i);
+            iss >> instructions[i];
         }
 
-        int pid = data.at(0);
-        int action = data.at(1);
-        int address = data.at(2);
-        int data = data.at(3);
+        int pid = instructions.at(0);
+        int action = instructions.at(1);
+        int address = instructions.at(2);
+        int data = instructions.at(3);
 
         // loop through processors, place some of the processor on action queue, and some on snooping queue
-        for (const auto & processor: this->processors){
+        for (const auto & processor: this->Processors){
             if(processor->pid == pid)
                 ActionQ.push(processor);
             else
@@ -53,20 +53,24 @@ void Simulator::simulationBegin(const std::string& filename){
 
         // start processing action queue
         while(!ActionQ.empty()){
-            ActionQ.front()->operation(action address,data);
+            ActionQ.front()->operation(action,address,data,this->atomicBus,this->ram);
             ActionQ.pop();
         }
         
         // start processing snooping queue
         while(!SnoopingQ.empty()){
-            SnoopingQ.front()->operation(action address,data);
+            SnoopingQ.front()->operation(2,address,data,this->atomicBus,this->ram);
             SnoopingQ.pop();
         }
 
-        // snoopi
+        //clear atomicBus
+        atomicBus->busRd.clear();
+        atomicBus->busRdAddr.clear();
+        atomicBus->busRdX.clear();
+        atomicBus->busRdXAddr.clear();
 
         //clear data vector
-        data.clear();
+        instructions.clear();
     }
 
     file.close();
@@ -78,7 +82,7 @@ void Simulator::report(){
 
         std::cout << "Cache Report: \n";
 
-        for (const auto& row : processor->cache->caches) {
+        for (const auto& row : processor->caches) {
             for (int i = 0; i < row.size(); i++) {
                 if (i == 0)
                     std::cout << "State:";
@@ -86,7 +90,7 @@ void Simulator::report(){
                     std::cout << "Tag:";
                 else if (i == 2)
                     std::cout << "Data:";
-                std::cout << row[i] << ' ';
+                std::cout << static_cast<unsigned int>(row[i]) << ' ';
             }
             std::cout << std::endl;
         }
@@ -96,5 +100,6 @@ void Simulator::report(){
 
 int main(){
     Simulator *simulator = new Simulator();
+    simulator->simulationBegin("test.txt");
     simulator->report();
 }

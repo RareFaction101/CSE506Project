@@ -1,16 +1,18 @@
 #include "Cache.h"
 #include "AtomicBus.h"
+#include "RAM.h"
+#include <cstdint>
 
 class Processor{
     public:
 
     static int ID;
     int pid;
-    Cache *cache;
     int totalCacheHitRead = 0;
     int totalCacheMissRead = 0;
     int totalCacheHitWrite = 0;
     int totalCacheMissWrite = 0;
+    std::vector<std::vector<uint8_t>> caches;
 
     // set the processor id
     // as well as initializing the cache block
@@ -35,9 +37,6 @@ class Processor{
     // address is byte address in the physical memory, see more details in cache class
     // data is just 32 bits data
 
-    void operation(const int c = 2, const int &address = -1, const int &data = -1, const AtomicBus &atomicBus = AtomicBus());
-    // read
-    if (c == 1){
-        
-    }
+    //expecting 6 bits address
+    void operation(const int &c = 2, const uint8_t &address = -1, const uint8_t &data = -1, AtomicBus *atomicBus = nullptr, RAM *ram = nullptr);
 };
