@@ -1,0 +1,5 @@
+thrid_party/*
+*.so
+*.o
+*.log
+mempin_trace.txt
