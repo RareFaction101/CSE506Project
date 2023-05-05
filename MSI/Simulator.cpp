@@ -1,6 +1,7 @@
 #include "Simulator.h"
 #include <sstream>
 #include <iostream>
+#include <string>
 
 Simulator::Simulator(){
     // fix size for processor
@@ -19,6 +20,26 @@ Simulator::Simulator(){
 
     // initialize atomicBus
     this->atomicBus = new AtomicBus();
+}
+
+Simulator::Simulator(int numOfProcessors,
+  int cacheSize, int cacheBlockSize, int ramSize, int ramBlockSize){
+    // fix size for processor
+    this->Processors.resize(numOfProcessors);
+
+    // cache coherence protocal
+    this->mode = "MSI";
+
+    // initialize each individual processor
+    for (size_t i = 0; i < this->Processors.size(); ++i) {
+        this->Processors[i] = new Processor(cacheSize,cacheBlockSize);
+    }
+
+    // initialize RAM
+    this->ram = new RAM(ramSize,ramBlockSize);
+
+    // initialize atomicBus
+    this->atomicBus = new AtomicBus(numOfProcessors);
 }
 
 void Simulator::simulationBegin(const std::string& filename){
@@ -126,6 +147,7 @@ void Simulator::report(){
 }
 
 int main(){
-    Simulator *simulator = new Simulator();
+    Simulator *simulator = new Simulator(8,32,8,128,8);
+    
     simulator->simulationBegin("test.txt");
 }

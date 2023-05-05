@@ -15,4 +15,6 @@ class AtomicBus{
 
     //sets the size of busRd and busRdX
     AtomicBus();
+
+    AtomicBus(int numOfProcessors);
 };

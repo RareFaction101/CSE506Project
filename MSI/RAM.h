@@ -28,11 +28,13 @@ class RAM{
 
     // initialize the size of caches based on the value of cacheSize and blockSize
     // also, initilize the content of caches to 0, and the state to 'I';
-    RAM(); 
+    RAM();
+
+    RAM(int ramSize, int ramBlock);
 
     // this function takes address as input, returns the data from the main memory
-    std::vector<uint8_t> memRead(const uint8_t &address);
+    std::vector<uint8_t> memRead(const uint64_t &address);
 
     // this function write the data to the particular RAM address
-    void writeToMem(const uint8_t &address, const std::vector<uint8_t> &data);
+    void writeToMem(const uint64_t &address, const std::vector<uint8_t> &data);
 };

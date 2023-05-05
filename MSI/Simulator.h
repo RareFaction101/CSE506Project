@@ -28,7 +28,8 @@ class Simulator{
   Simulator();
 
   //mode should either accept "MESI" or "MSI";
-  Simulator(int numOfProcessors, std::string mode);
+  Simulator(int numOfProcessors,
+  int cacheSize, int cacheBlockSize, int ramSize, int ramBlockSize);
 
   // this simulation will read a test file using the following format
   //

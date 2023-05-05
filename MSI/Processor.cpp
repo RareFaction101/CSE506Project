@@ -1,16 +1,55 @@
 #include "Processor.h"
 #include <iostream>
+#include <cmath>
 
 int Processor::ID = 0;
-uint8_t extractBits(uint8_t);
+
+int computeCacheIndexBits(int cacheSize, int blockSize) {
+    int numCacheBlocks = cacheSize / blockSize;
+    int numCacheSets = numCacheBlocks;
+    int indexBits = static_cast<int>(std::log2(numCacheSets));
+    return indexBits;
+}
+int computeBlockOffsetBits(int blockSize) {
+    int offsetBits = static_cast<int>(std::log2(blockSize));
+    return offsetBits;
+}
+int extractCacheIndex(uint64_t address, int cacheSize, int blockSize) {
+    int indexBits = computeCacheIndexBits(cacheSize, blockSize);
+    int offsetBits = computeBlockOffsetBits(blockSize);
+
+    // Create a mask to extract the cache index bits
+    unsigned int indexMask = (1 << indexBits) - 1;
+
+    // Shift the address to the right by the number of offsetBits to remove them
+    // Then apply the mask to extract the cache index bits
+    return (address >> offsetBits) & indexMask;
+}
+int extractBlockOffset(uint64_t address, int blockSize) {
+    int offsetBits = computeBlockOffsetBits(blockSize);
+
+    // Create a mask to extract the block offset bits
+    unsigned int offsetMask = (1 << offsetBits) - 1;
+
+    // Apply the mask to extract the block offset bits from the memory address
+    return address & offsetMask;
+}
+int extractTagBits(uint64_t address, int cacheSize, int blockSize){
+    int indexBits = computeCacheIndexBits(cacheSize, blockSize);
+    int offsetBits = computeBlockOffsetBits(blockSize);
+
+    // Shift the address to the right by the sum of indexBits and offsetBits to remove them
+    // The remaining bits represent the tag bits
+    return address >> (indexBits + offsetBits);
+}
 
 Processor::Processor() {
     // Assign a unique ID to the processor and increment the static ID counter
     this->pid = this->ID++;
 
     // Set the cache size and block size
-    int cacheSize = 16;
-    int blockSize = 4;
+    this->cacheSize = 16;
+    this->cacheBlockSize = 4;
 
     // Resize the outer vector (caches) to have 4 elements (cache lines)
     this->caches.resize(4);
@@ -30,7 +69,30 @@ Processor::Processor() {
     }
 }
 
-void Processor::operation(const int &c, const uint8_t &address, const uint8_t &data, AtomicBus *atomicBus, RAM *ram) {
+Processor::Processor(int cacheSize, int cacheBlockSize){
+    // Assign a unique ID to the processor and increment the static ID counter
+    this->pid = this->ID++;
+
+    // Resize the outer vector (caches) to have 4 elements (cache lines)
+    this->cacheSize = cacheSize;
+    this->cacheBlockSize = cacheBlockSize;
+
+    int cacheLineSize = ceil((double)this->cacheSize / (double)this->cacheBlockSize);
+
+    this->caches.resize(cacheLineSize);
+
+    // Resize each inner vector (cache line) to have 6 elements (metadata and data)
+    for (auto& cache : caches) {
+        cache.resize(2+cacheBlockSize);
+    }
+
+    // Initialize the cache lines
+    for (size_t i = 0; i < this->caches.size(); ++i) {
+        std::fill(this->caches[i].begin(), this->caches[i].end(), 0);
+    }
+}
+
+void Processor::operation(const int &c, const uint64_t &address, const uint8_t &data, AtomicBus *atomicBus, RAM *ram) {
     // Check the operation type based on the value of 'c'
     if (c == 0) {
         // If 'c' is 0, perform a read operation
@@ -44,11 +106,12 @@ void Processor::operation(const int &c, const uint8_t &address, const uint8_t &d
     }
 }
 
-void Processor::PrRd(const uint8_t &address, AtomicBus *atomicBus) {
+void Processor::PrRd(const uint64_t &address, AtomicBus *atomicBus) {
+    
     // Extract the tag and cache index from the address
-    uint8_t tag = address >> 4;
-    int cacheIndex = static_cast<unsigned int>(extractBits(address));
-    int blockIndex = static_cast<unsigned int>(address & 0x03);
+    int cacheIndex = extractCacheIndex(address,this->cacheSize,this->cacheBlockSize);
+    int blockIndex = extractBlockOffset(address,this->cacheBlockSize);
+    uint64_t tag = extractTagBits(address,this->cacheSize,this->cacheBlockSize);
 
     // Check if the cache line at 'cacheIndex' has the same tag and a valid state (non-zero)
     if (this->caches[cacheIndex][1] == tag && this->caches[cacheIndex][0] != 0) {
@@ -69,11 +132,11 @@ void Processor::PrRd(const uint8_t &address, AtomicBus *atomicBus) {
     }
 }
 
-void Processor::PrWr(const uint8_t &address, const uint8_t &data, AtomicBus *atomicBus) {
+void Processor::PrWr(const uint64_t &address, const uint8_t &data, AtomicBus *atomicBus) {
     // Extract the tag, cache index, and block index from the address
-    uint8_t tag = address >> 4;
-    int cacheIndex = static_cast<unsigned int>(extractBits(address));
-    int blockIndex = static_cast<unsigned int>(address & 0x03);
+    int cacheIndex = extractCacheIndex(address,this->cacheSize,this->cacheBlockSize);
+    int blockIndex = extractBlockOffset(address,this->cacheBlockSize);
+    uint64_t tag = extractTagBits(address,this->cacheSize,this->cacheBlockSize);
 
     // Check if the cache line at 'cacheIndex' has the same tag and a valid state (non-zero)
     if (this->caches[cacheIndex][1] == tag && this->caches[cacheIndex][0] != 0) {
@@ -108,11 +171,11 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
     // Iterate through each bus request
     for (size_t i = 0; i < atomicBus->busRd.size(); i++) {
         // Extract cache indices and tags for bus read and bus write requests
-        int snoopedCacheIndexRd = static_cast<unsigned int>(extractBits(atomicBus->busRdAddr[i]));
-        int snoopedCacheIndexRdX = static_cast<unsigned int>(extractBits(atomicBus->busRdXAddr[i]));
+        int snoopedCacheIndexRd = static_cast<unsigned int>(extractCacheIndex(atomicBus->busRdAddr[i],this->cacheSize,this->cacheBlockSize));
+        int snoopedCacheIndexRdX = static_cast<unsigned int>(extractCacheIndex(atomicBus->busRdXAddr[i],this->cacheSize,this->cacheBlockSize));
 
-        uint8_t tagRd = atomicBus->busRdAddr[i] >> 4;
-        uint8_t tagRdX = atomicBus->busRdXAddr[i] >> 4;
+        uint64_t tagRd = extractTagBits(atomicBus->busRdAddr[i],this->cacheSize,this->cacheBlockSize);
+        uint64_t tagRdX = extractTagBits(atomicBus->busRdXAddr[i],this->cacheSize,this->cacheBlockSize);
 
         // Snooping bus read request
         if (atomicBus->busRd[i]) {
@@ -123,7 +186,7 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
                     this->caches[snoopedCacheIndexRd][0] = 1;
 
                     // Flush the cache line to RAM
-                    std::vector<uint8_t> temp(4);
+                    std::vector<uint8_t> temp(this->cacheBlockSize);
                     for (size_t i = 0; i < temp.size(); i++) {
                         temp[i] = this->caches[snoopedCacheIndexRd][i + 2];
                     }
@@ -153,7 +216,7 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
                     this->caches[snoopedCacheIndexRdX][0] = 0;
 
                     // Flush the cache line to RAM
-                    std::vector<uint8_t> temp(4);
+                    std::vector<uint8_t> temp(this->cacheBlockSize);
                     for (size_t i = 0; i < temp.size(); i++) {
                         temp[i] = this->caches[snoopedCacheIndexRdX][i + 2];
                     }
@@ -164,11 +227,11 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
     }
 }
 
-void Processor::busResponse(const int &c, const uint8_t &address, const uint8_t &data, AtomicBus *atomicBus, RAM *ram){
+void Processor::busResponse(const int &c, const uint64_t &address, const uint8_t &data, AtomicBus *atomicBus, RAM *ram){
 
-    uint8_t tag = address >> 4;
-    int cacheIndex = static_cast<unsigned int>(extractBits(address));
-    int blockIndex = static_cast<unsigned int>(address & 0x03);
+    int cacheIndex = extractCacheIndex(address,this->cacheSize,this->cacheBlockSize);
+    int blockIndex = extractBlockOffset(address,this->cacheBlockSize);
+    uint64_t tag = extractTagBits(address,this->cacheSize,this->cacheBlockSize);
 
     if (c == 0){
         //checking current state
@@ -204,8 +267,4 @@ void Processor::busResponse(const int &c, const uint8_t &address, const uint8_t 
             this->caches[cacheIndex][1] = tag;
         }
     }
-}
-
-uint8_t extractBits(uint8_t value) {
-    return (value >> 2) & 0x03;
 }
