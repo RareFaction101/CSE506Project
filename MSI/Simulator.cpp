@@ -55,14 +55,23 @@ void Simulator::simulationBegin(const std::string& filename){
         //read inputs
         std::istringstream iss(line);
 
-        for (size_t i = 0; i < 4; ++i){
-            iss >> instructions[i];
-        }
+        // for (size_t i = 0; i < 4; ++i){
+        //     iss >> instructions[i];
+        // }
 
-        int pid = instructions.at(0);
-        int action = instructions.at(1);
-        int address = instructions.at(2);
-        int data = instructions.at(3);
+        // int pid = instructions.at(0);
+        // int action = instructions.at(1);
+        // int address = instructions.at(2);
+        // int data = instructions.at(3);
+        int pid;
+        int action;
+        uint64_t address;
+        uint64_t odata;
+        iss >> pid;
+        iss >> action;
+        iss >> address;
+        iss >> odata;
+        uint8_t data = static_cast<uint8_t>(odata);
 
         // loop through processors, place some of the processor on action queue, and some on snooping queue
         for (const auto & processor: this->Processors){
@@ -99,8 +108,10 @@ void Simulator::simulationBegin(const std::string& filename){
         std::fill(atomicBus->busRdXAddr.begin(),atomicBus->busRdXAddr.end(),false);
 
         //generate report
-        report();
+        // report();
     }
+    // report only when finish
+    report();
 
     file.close();
 }
@@ -148,11 +159,11 @@ void Simulator::report(){
         std::cout << "Pid " << x++ << ":  " << rd << "  ";
     std::cout << std::endl;
 
-    x = 0;
-    std::cout << "Shared State: ";
-    for (const auto& rd: this->atomicBus->shareState)
-        std::cout << "Pid " << x++ << ":  " << rd << "  ";
-    std::cout << std::endl;
+    // x = 0;
+    // std::cout << "Shared State: ";
+    // for (const auto& rd: this->atomicBus->shareState)
+    //     std::cout << "Pid " << x++ << ":  " << rd << "  ";
+    // std::cout << std::endl;
 
     for (const auto& processor: Processors){
         std::cout << "Processor: " << processor->pid << "\n";
@@ -166,7 +177,15 @@ void Simulator::report(){
 }
 
 int main(){
-    Simulator *simulator = new Simulator(5,16,4,64,4);
+    // Simulator *simulator = new Simulator(5,16,4,64,4);
+    Simulator *simulator = new Simulator(
+        4, // numOfProcessors
+        8 * 1024, // cacheSize (8kb)
+        64, // cacheBlockSize (64b)
+        0, // ramSize (currently no use)
+        4  // ramBlockSize (currently no use)
+    );
     
     simulator->simulationBegin("test.txt");
+    // simulator->simulationBegin("mempin_trace.txt");
 }

@@ -34,7 +34,7 @@ int extractBlockOffset(uint64_t address, int blockSize) {
     // Apply the mask to extract the block offset bits from the memory address
     return address & offsetMask;
 }
-int extractTagBits(uint64_t address, int cacheSize, int blockSize){
+/*int*/ uint64_t extractTagBits(uint64_t address, int cacheSize, int blockSize){
     int indexBits = computeCacheIndexBits(cacheSize, blockSize);
     int offsetBits = computeBlockOffsetBits(blockSize);
 
@@ -43,30 +43,30 @@ int extractTagBits(uint64_t address, int cacheSize, int blockSize){
     return address >> (indexBits + offsetBits);
 }
 
-Processor::Processor() {
-    // Assign a unique ID to the processor and increment the static ID counter
-    this->pid = this->ID++;
+Processor::Processor() : Processor(16, 4) {
+    // // Assign a unique ID to the processor and increment the static ID counter
+    // this->pid = this->ID++;
 
-    // Set the cache size and block size
-    this->cacheSize = 16;
-    this->cacheBlockSize = 4;
+    // // Set the cache size and block size
+    // this->cacheSize = 16;
+    // this->cacheBlockSize = 4;
 
-    // Resize the outer vector (caches) to have 4 elements (cache lines)
-    this->caches.resize(4);
+    // // Resize the outer vector (caches) to have 4 elements (cache lines)
+    // this->caches.resize(4);
 
-    // Resize each inner vector (cache line) to have 6 elements (metadata and data)
-    for (auto& cache : caches) {
-        cache.resize(6);
-    }
+    // // Resize each inner vector (cache line) to have 6 elements (metadata and data)
+    // for (auto& cache : caches) {
+    //     cache.resize(6);
+    // }
 
-    // Initialize the cache lines
-    for (size_t i = 0; i < this->caches.size(); ++i) {
-        // Set the first element of each cache line to 0 (e.g., a tag or status bit)
-        this->caches[i][0] = 0;
+    // // Initialize the cache lines
+    // for (size_t i = 0; i < this->caches.size(); ++i) {
+    //     // Set the first element of each cache line to 0 (e.g., a tag or status bit)
+    //     this->caches[i][0] = 0;
 
-        // Set the remaining elements of each cache line to 0 (e.g., data or other metadata)
-        std::fill(this->caches[i].begin() + 1, this->caches[i].end(), 0);
-    }
+    //     // Set the remaining elements of each cache line to 0 (e.g., data or other metadata)
+    //     std::fill(this->caches[i].begin() + 1, this->caches[i].end(), 0);
+    // }
 }
 
 Processor::Processor(int cacheSize, int cacheBlockSize){
@@ -81,10 +81,10 @@ Processor::Processor(int cacheSize, int cacheBlockSize){
 
     this->caches.resize(cacheLineSize);
 
-    // Resize each inner vector (cache line) to have 6 elements (metadata and data)
-    for (auto& cache : caches) {
-        cache.resize(2+cacheBlockSize);
-    }
+    // // Resize each inner vector (cache line) to have 6 elements (metadata and data)
+    // for (auto& cache : caches) {
+    //     cache.resize(2+cacheBlockSize);
+    // }
 
     // Initialize the cache lines
     for (size_t i = 0; i < this->caches.size(); ++i) {
@@ -154,7 +154,7 @@ void Processor::PrWr(const uint64_t &address, const uint8_t &data, AtomicBus *at
         this->caches[cacheIndex][0] = 2;
 
         // Update the cache line with the new data
-        this->caches[cacheIndex][2 + blockIndex] = data;
+        // this->caches[cacheIndex][2 + blockIndex] = data;
     } else {
         // Cache miss - set the busRdX signal and busRdXAddr for this processor
         atomicBus->busRdX.at(this->pid) = true;
@@ -185,12 +185,12 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
                 if (this->caches[snoopedCacheIndexRd][0] == 2){
                     this->caches[snoopedCacheIndexRd][0] = 1;
 
-                    // Flush the cache line to RAM
-                    std::vector<uint8_t> temp(this->cacheBlockSize);
-                    for (size_t i = 0; i < temp.size(); i++) {
-                        temp[i] = this->caches[snoopedCacheIndexRd][i + 2];
-                    }
-                    ram->writeToMem(atomicBus->busRdAddr[i], temp);
+                    // // Flush the cache line to RAM
+                    // std::vector<uint8_t> temp(this->cacheBlockSize);
+                    // for (size_t i = 0; i < temp.size(); i++) {
+                    //     temp[i] = this->caches[snoopedCacheIndexRd][i + 2];
+                    // }
+                    // ram->writeToMem(atomicBus->busRdAddr[i], temp);
                 }
 
                 // if current state is S, change it to S
@@ -215,12 +215,12 @@ void Processor::Snooping(AtomicBus *atomicBus, RAM *ram) {
                 else if(this->caches[snoopedCacheIndexRdX][0] == 2){
                     this->caches[snoopedCacheIndexRdX][0] = 0;
 
-                    // Flush the cache line to RAM
-                    std::vector<uint8_t> temp(this->cacheBlockSize);
-                    for (size_t i = 0; i < temp.size(); i++) {
-                        temp[i] = this->caches[snoopedCacheIndexRdX][i + 2];
-                    }
-                    ram->writeToMem(atomicBus->busRdXAddr[i], temp);
+                    // // Flush the cache line to RAM
+                    // std::vector<uint8_t> temp(this->cacheBlockSize);
+                    // for (size_t i = 0; i < temp.size(); i++) {
+                    //     temp[i] = this->caches[snoopedCacheIndexRdX][i + 2];
+                    // }
+                    // ram->writeToMem(atomicBus->busRdXAddr[i], temp);
                 }
             }
         }
@@ -237,10 +237,10 @@ void Processor::busResponse(const int &c, const uint64_t &address, const uint8_t
         //checking current state
         if (this->caches[cacheIndex][0] == 0){
 
-            //read from main mem
-            std::vector<uint8_t> temp = ram->memRead(address);
-            for(int i = 2; i < this->caches[cacheIndex].size();i++)
-                this->caches[cacheIndex][i] = temp[i-2];
+            // //read from main mem
+            // std::vector<uint8_t> temp = ram->memRead(address);
+            // for(int i = 2; i < this->caches[cacheIndex].size();i++)
+            //     this->caches[cacheIndex][i] = temp[i-2];
 
             //changing to state S
             this->caches[cacheIndex][0] = 1;
@@ -252,16 +252,16 @@ void Processor::busResponse(const int &c, const uint64_t &address, const uint8_t
         //checking current state
         if (this->caches[cacheIndex][0] == 0){
 
-            //read from main mem
-            std::vector<uint8_t> temp = ram->memRead(address);
-            for(int i = 2; i < this->caches[cacheIndex].size();i++)
-                this->caches[cacheIndex][i] = temp[i-2];
+            // //read from main mem
+            // std::vector<uint8_t> temp = ram->memRead(address);
+            // for(int i = 2; i < this->caches[cacheIndex].size();i++)
+            //     this->caches[cacheIndex][i] = temp[i-2];
 
             //chaging the state to M
             this->caches[cacheIndex][0] = 2;
 
-            // Update the cache line with the new data
-            this->caches[cacheIndex][2 + blockIndex] = data;
+            // // Update the cache line with the new data
+            // this->caches[cacheIndex][2 + blockIndex] = data;
 
             //changing the tag
             this->caches[cacheIndex][1] = tag;

@@ -2,6 +2,8 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <cmath>
+#include <cstdint>
 
 int computeCacheIndexBits2(int cacheSize, int blockSize) {
     int numCacheBlocks = cacheSize / blockSize;
@@ -77,14 +79,23 @@ void Simulator::simulationBegin(const std::string& filename){
         //read inputs
         std::istringstream iss(line);
 
-        for (size_t i = 0; i < 4; ++i){
-            iss >> instructions[i];
-        }
+        // for (size_t i = 0; i < 4; ++i){
+        //     iss >> instructions[i];
+        // }
 
-        int pid = instructions.at(0);
-        int action = instructions.at(1);
-        int address = instructions.at(2);
-        int data = instructions.at(3);
+        // int pid = instructions.at(0);
+        // int action = instructions.at(1);
+        // int address = instructions.at(2);
+        // int data = instructions.at(3);
+        int pid;
+        int action;
+        uint64_t address;
+        uint64_t odata;
+        iss >> pid;
+        iss >> action;
+        iss >> address;
+        iss >> odata;
+        uint8_t data = static_cast<uint8_t>(odata);
 
         // check if target cache line has shared state
         for(int i = 0; i < this->Processors.size(); i++){
@@ -120,8 +131,8 @@ void Simulator::simulationBegin(const std::string& filename){
             ResponseQ.pop();
         }
 
-        //generate report
-        report();
+        // //generate report
+        // report();
 
         //initialize atomicBus
         std::fill(atomicBus->busRd.begin(),atomicBus->busRd.end(),false);
@@ -129,6 +140,8 @@ void Simulator::simulationBegin(const std::string& filename){
         std::fill(atomicBus->busRdX.begin(),atomicBus->busRdX.end(),false);
         std::fill(atomicBus->busRdXAddr.begin(),atomicBus->busRdXAddr.end(),false);
     }
+    // report when finish
+    report();
 
     file.close();
 }
@@ -194,7 +207,15 @@ void Simulator::report(){
 }
 
 int main(){
-    Simulator *simulator = new Simulator(4,16,4,64,4);
+    // Simulator *simulator = new Simulator(5,16,4,64,4);
+    Simulator *simulator = new Simulator(
+        4, // numOfProcessors
+        8 * 1024, // cacheSize (8kb)
+        64, // cacheBlockSize (64b)
+        0, // ramSize (currently no use)
+        4  // ramBlockSize (currently no use)
+    );
     
     simulator->simulationBegin("test.txt");
+    // simulator->simulationBegin("mempin_trace.txt");
 }

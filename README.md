@@ -1,8 +1,22 @@
 # CSE 506 Project
 
 > **Note**
-> this project only runs on Linux.
+> + This project only runs on Linux.
+> + All `make` required to be GNU Make.
 
+## Build and Run MSI Model
+
+```sh
+make msi
+MSI/main
+```
+
+## Build and Run MESI Model
+
+```sh
+make mesi
+MSEI/main
+```
 
 ## Download Intel Pin
 

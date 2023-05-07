@@ -101,7 +101,7 @@ std::string mem_records_to_str(const std::vector<MemRecord>& records) {
         const MemRecord& rec = records[i];
         ss  << rec.cpu << ' '
             << (rec.write_en ? '1' : '0') << ' '
-            << rec.addr << ' '
+            << reinterpret_cast<uintptr_t>(rec.addr) << ' '
             << '0';
         if (i != len - 1)
             ss << '\n';

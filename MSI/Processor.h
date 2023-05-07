@@ -2,6 +2,12 @@
 #include "AtomicBus.h"
 #include "RAM.h"
 #include <cstdint>
+#include <vector>
+#include <array>
+
+#define CACHEP_STATE_I 0
+#define CACHEP_STATE_S 1
+#define CACHEP_STATE_M 2
 
 class Processor{
     public:
@@ -23,7 +29,9 @@ class Processor{
     int totalCacheMissWrite = 0;
 
     // 2D Caches
-    std::vector<std::vector<uint8_t>> caches;
+    // [0]: state
+    // [1]: tag
+    std::vector<std::array<uint64_t, 2>> caches;
 
     // This constructor initializes a Processor object. It assigns a unique ID to the processor and sets the cache size and block size. The cache is represented as a two-dimensional vector, where the first dimension corresponds to cache lines and the second dimension contains cache coherence state, tag, and data elements. The constructor initializes all elements in the cache to 0.
     Processor();
